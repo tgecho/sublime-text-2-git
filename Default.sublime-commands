@@ -76,6 +76,10 @@
         "command": "git_add_choice"
     }
     ,{
+        "caption": "Git: Reset (unstage) Current File",
+        "command": "git_reset_head"
+    }
+    ,{
         "caption": "Git: Checkout Current File",
         "command": "git_checkout"
     }
@@ -107,8 +111,4 @@
         "caption": "Git: Open...",
         "command": "git_open_file"
     }
-	,{
-		"caption": "Git: Reset (unstage) Current File",
-		"command": "git_reset_head"
-	}
 ]
