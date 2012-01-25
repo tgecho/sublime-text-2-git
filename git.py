@@ -46,6 +46,12 @@ def plugin_file(name):
     return os.path.join(PLUGIN_DIRECTORY, name)
 
 
+def do_when(conditional, callback, *args, **kwargs):
+    if conditional():
+        return callback(*args, **kwargs)
+    sublime.set_timeout(functools.partial(do_when, conditional, callback, *args, **kwargs), 50)
+
+
 def _make_text_safeish(text, fallback_encoding):
     # The unicode decode here is because sublime converts to unicode inside
     # insert in such a way that unknown characters will cause errors, which is
@@ -101,6 +107,8 @@ class CommandThread(threading.Thread):
 
 # A base for all commands
 class GitCommand:
+    may_change_files = False
+
     def run_command(self, command, callback=None, show_status=True,
             filter_empty_args=True, no_save=False, **kwargs):
         if filter_empty_args:
@@ -128,7 +136,18 @@ class GitCommand:
     def generic_done(self, result):
         if not result.strip():
             return
-        self.scratch(result)
+
+        if self.may_change_files and self.active_view() and self.active_view().file_name():
+            if self.active_view().is_dirty():
+                result = "WARNING: Current view is dirty.\n\n"
+            else:
+                # just asking the current file to be re-opened doesn't do anything
+                print "reverting"
+                position = self.active_view().viewport_position()
+                self.active_view().run_command('revert')
+                do_when(lambda: not self.active_view().is_loading(), lambda: self.active_view().set_viewport_position(position, False))
+                # self.active_view().show(position)
+        self.panel(result)
 
     def _output_to_view(self, output_file, output, clear=False,
             syntax="Packages/Diff/Diff.tmLanguage", **kwargs):
@@ -405,6 +424,7 @@ class GitDiffTool(GitWindowCommand):
     def run(self):
         self.run_command(['git', 'difftool'])
 
+
 class GitQuickCommitCommand(GitTextCommand):
     def run(self, edit):
         self.get_window().show_input_panel("Message", "",
@@ -584,6 +604,8 @@ class GitAdd(GitTextCommand):
 
 
 class GitStashCommand(GitWindowCommand):
+    may_change_files = True
+
     def run(self):
         self.run_command(['git', 'stash'])
 
@@ -639,6 +661,7 @@ class GitOpenFileCommand(GitLog, GitWindowCommand):
 
 
 class GitBranchCommand(GitWindowCommand):
+    may_change_files = True
     command_to_run_after_branch = 'checkout'
 
     def run(self):
@@ -676,11 +699,10 @@ class GitNewBranchCommand(GitWindowCommand):
 
 
 class GitCheckoutCommand(GitTextCommand):
-    def run(self, edit):
-        self.run_command(['git', 'checkout', self.get_file_name()], self.checkout_done)
+    may_change_files = True
 
-    def checkout_done(self, result):
-        self.view.run_command('revert')
+    def run(self, edit):
+        self.run_command(['git', 'checkout', self.get_file_name()])
 
 
 class GitPullCommand(GitWindowCommand):
@@ -694,6 +716,8 @@ class GitPushCommand(GitWindowCommand):
 
 
 class GitCustomCommand(GitTextCommand):
+    may_change_files = True
+
     def run(self, edit):
         self.get_window().show_input_panel("Git command", "",
             self.on_input, None, None)
@@ -835,7 +859,7 @@ class GitAnnotateCommand(GitTextCommand):
 
 class GitAddSelectedHunkCommand(GitTextCommand):
     def run(self, edit):
-        self.run_command(['git', 'diff', '--no-color', '-U0', self.get_file_name()], self.cull_diff)
+        self.run_command(['git', 'diff', '--no-color', self.get_file_name()], self.cull_diff)
 
     def cull_diff(self, result):
         selection = []
@@ -869,5 +893,5 @@ class GitAddSelectedHunkCommand(GitTextCommand):
                 diffs += hunk["diff"]# + "\n\nEND OF HUNK\n\n"
                 i += 1
         
-        if(i): self.run_command(['git', 'apply', '--cached'], callback=self.panel, stdin=diffs)
+        if(i): self.run_command(['git', 'apply', '--cached'], stdin=diffs)
         else: sublime.status_message("No selected hunk")
