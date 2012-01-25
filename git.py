@@ -131,7 +131,7 @@ class GitCommand:
         self.scratch(result)
 
     def _output_to_view(self, output_file, output, clear=False,
-            syntax="Packages/Diff/Diff.tmLanguage"):
+            syntax="Packages/Diff/Diff.tmLanguage", **kwargs):
         output_file.set_syntax_file(syntax)
         edit = output_file.begin_edit()
         if clear:
