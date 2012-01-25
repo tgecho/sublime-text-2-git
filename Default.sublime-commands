@@ -80,6 +80,10 @@
         "command": "git_reset_head"
     }
     ,{
+        "caption": "Git: Reset (unstage) All",
+        "command": "git_reset_all"
+    }
+    ,{
         "caption": "Git: Checkout Current File",
         "command": "git_checkout"
     }

@@ -717,6 +717,14 @@ class GitResetHeadCommand(GitTextCommand):
 		pass
 
 
+class GitResetAllCommand(GitWindowCommand):
+    def run(self):
+        self.run_command(['git', 'reset'])
+    
+    def generic_done(self, result):
+        pass
+
+
 class GitClearAnnotationCommand(GitTextCommand):
     def run(self, view):
         self.active_view().settings().set('live_git_annotations', False)

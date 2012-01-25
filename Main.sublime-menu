@@ -34,6 +34,7 @@
                             ,{ "caption": "Diff Tool", "command": "git_diff_tool" }
                             ,{ "caption": "Open...", "command": "git_open_file" }
                             ,{ "caption": "Add...", "command": "git_add_choice" }
+                            ,{ "caption": "Reset", "command": "git_reset_all" }
                         ]
                     }
                     ,{
