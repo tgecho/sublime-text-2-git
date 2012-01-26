@@ -749,19 +749,11 @@ class GitResetAllCommand(GitWindowCommand):
         pass
 
 
-class GitClearAnnotationCommand(GitTextCommand):
-    def run(self, view):
-        self.active_view().settings().set('live_git_annotations', False)
-        self.view.erase_regions('git.changes.x')
-        self.view.erase_regions('git.changes.+')
-        self.view.erase_regions('git.changes.-')
-
-
 class GitAnnotationListener(sublime_plugin.EventListener):
     def on_modified(self, view):
-        if not view.settings().get('live_git_annotations'):
-            return
         view.run_command('git_annotate')
+    def on_load(self, view):
+        self.on_modified(view)
 
 
 class GitAnnotateCommand(GitTextCommand):
@@ -774,11 +766,10 @@ class GitAnnotateCommand(GitTextCommand):
     #    output is then parsed and regions are set accordingly.
     def run(self, view):
         # If the annotations are already running, we dont have to create a new tmpfile
-        if self.active_view().settings().get('live_git_annotations') and hasattr(self, "tmp"):
+        if hasattr(self, "tmp"):
             self.compare_tmp(None)
             return
         self.tmp = tempfile.NamedTemporaryFile()
-        self.active_view().settings().set('live_git_annotations', True)
         root = git_root(self.get_working_dir())
         repo_file = os.path.relpath(self.view.file_name(), root)
         self.run_command(['git', 'show', 'HEAD:{0}'.format(repo_file)], show_status=False, no_save=True, callback=self.compare_tmp, stdout=self.tmp)
