@@ -754,6 +754,8 @@ class GitAnnotationListener(sublime_plugin.EventListener):
         view.run_command('git_annotate')
     def on_load(self, view):
         self.on_modified(view)
+    def on_activated(self, view):
+        self.on_modified(view)
 
 
 class GitAnnotateCommand(GitTextCommand):
